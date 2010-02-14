@@ -1,0 +1,32 @@
+
+
+datamodel
+---------
+
+
+Weblog
+
+ mainpage
+ archive page, for each tag
+ archive page, each month
+ entrypage, each entry
+
+Normal
+
+ page
+
+
+PageRenderer process
+
+  data --> format --> page
+
+  website
+    pages
+    weblog
+      entries
+    galleries
+      pictures
+
+a page has a title
+an entry has a (title, date)
+

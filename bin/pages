@@ -1,0 +1,120 @@
+#!/usr/bin/ruby
+# This file is part of Pages.
+#
+# Pages is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pages is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pages.  If not, see <http://www.gnu.org/licenses/>.
+
+$:.push(File.dirname(__FILE__) + "/../lib")
+
+require 'ftools'
+require 'pages/storage/blog'
+require 'pages/website'
+require 'pages/blog'
+require 'net/http'
+require 'uri'
+
+$PAGES_PATH = ENV['PAGES_PATH'] or raise "No PAGES_PATH environment variable"
+
+def dest_file(dir, filename)
+    return File.join($PAGES_PATH, dir, filename)
+end
+
+def usage
+    puts <<"END"
+#{$0} command base [args...]
+
+Commands:
+  init     initialize a new weblog
+  build    build the weblog
+  index    show a list of entries
+  edit     edit an entry, use index for id
+  ping     ping to technorati (beta)
+
+END
+    exit;
+end
+
+command = ARGV[0] or usage()
+
+if command == 'init'
+    base = ARGV[1] or raise "No basedir given"
+
+    dir = File.join($PAGES_PATH, base)
+
+    if !File.exist?(dir)
+        Dir.mkdir(dir)
+    end
+
+    File.copy(File.join($PAGES_PATH, 'default', 'build.rb'), dir)
+    File.copy(File.join($PAGES_PATH, 'default', 'config.yml'), dir)
+
+    Dir.mkdir(File.join(dir, "src")) if !File.exist?(File.join(dir, "src"))
+    Dir.mkdir(File.join(dir, "src/blog")) if !File.exist?(File.join(dir, "src/blog"))
+
+    %w{header footer}.each do|file|
+        actual_file = "src/#{file}.tpf"
+        if !File.exist?(dest_file(base, actual_file))
+            File.copy(dest_file('default', actual_file), File.join(dir, "src"))
+        end
+    end
+
+    system('touch', File.join(dir, '/src/blog/index.yaml'))
+
+elsif command == 'build'
+    base = ARGV[1] or raise "No basedir given"
+
+      dir = File.join($PAGES_PATH, base);
+      Dir.chdir(dir)
+
+      options = YAML::load(File.open('config.yml'))
+
+      srcdir=options['srcdir']
+      outdir=options['outdir']
+
+      website = Pages::Storage::Website.new(srcdir, options)
+
+      pages = Pages::GeneratePages.new(website, srcdir, outdir)
+      pages.generate
+
+      bloggen = Pages::Blog::Generate.new(website, srcdir, outdir, options)
+      bloggen.generate
+
+      puts
+
+elsif command == 'index'
+    base = ARGV[1] or raise "No basedir given"
+
+    dir = File.join($PAGES_PATH, base)
+
+    blog = Pages::BlogModel.new(File.join(dir, 'src'), 'index.yaml')
+
+    i = 1
+
+    blog.pages.slice(0,20).each do |page|
+        puts "%5d  %s" % [ i, page.title ]
+        i += 1
+    end
+elsif command == 'edit'
+    base = ARGV[1] or raise "No basedir given"
+    index = ARGV[2] or raise "No index given"
+
+    index = index.to_i
+    dir = File.join($PAGES_PATH, base)
+    blog = Pages::BlogModel.new(File.join(dir, 'src'), 'index.yaml')
+    page = blog.pages[index-1]
+
+    system('vim', File.join(dir, 'src/blog', page.filename))
+else
+    raise "No known command: #{command}"
+end
+

@@ -1,0 +1,58 @@
+#!/usr/bin/ruby
+# This file is part of Pages.
+#
+# Pages is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# Pages is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with Pages.  If not, see <http://www.gnu.org/licenses/>.
+
+$:.push(File.dirname(__FILE__) + "/../lib")
+
+require 'pages/storage/blog'
+require 'tempfile'
+
+if ARGV.length == 0 
+   puts "usage: #{$PROGRAM_NAME} <weblog> <title> <tags...>"
+   exit
+end
+
+weblog = ARGV.shift
+title = ARGV.shift
+tags = *ARGV
+
+$PAGES_PATH = ENV['PAGES_PATH']
+
+raise "need a weblog name" unless weblog
+raise "need a title" unless title
+raise "need tags" unless tags && tags.size > 0
+
+srcdir = File.join($PAGES_PATH, weblog, 'src')
+
+raise "need a name of a weblog that exists (instead of #{weblog})" unless FileTest.directory?(srcdir)
+
+Tempfile.open('weblog') do |file|
+    editor = ENV['EDITOR'] || '/usr/bin/vim'
+  system "#{editor} #{file.path}"
+  content = file.read
+
+  blog = Pages::BlogModel.new(srcdir, 'index.yaml')
+
+  page = blog.newitem
+
+  page.title = title
+  page.tags = tags
+  page.content = content
+
+  blog.saveall
+
+  puts "Filename is #{srcdir}/blog/" + page.filename
+end
+
