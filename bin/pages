@@ -114,6 +114,19 @@ elsif command == 'edit'
     page = blog.pages[index-1]
 
     system('vim', File.join(dir, 'src/blog', page.filename))
+elsif command == 'upload'
+    base = ARGV[1] or raise "No basedir given"
+    dir = File.join($PAGES_PATH, base);
+    Dir.chdir(dir)
+
+    options = YAML::load(File.open('config.yml'))
+
+    puts "Uploading website #{base}"
+    if options['upload_command']
+        system(options['upload_command'])
+    else
+        raise "No upload command available in the configuration"
+    end
 else
     raise "No known command: #{command}"
 end
