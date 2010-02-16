@@ -1,32 +1,22 @@
+## NAME
+
+Pages - a static website generator
+
+## SYNOPSYS
+
+    blog [weblog] [title] [tag]...
+    
+    pages edit [weblog] 1
+
+    pages build [weblog]
+    pages upload [weblog]
+
+## DESCRIPTION
+
+Builds a static website from Markdown files.
 
 
-datamodel
----------
+## AUTHOR
 
-
-Weblog
-
- mainpage
- archive page, for each tag
- archive page, each month
- entrypage, each entry
-
-Normal
-
- page
-
-
-PageRenderer process
-
-  data --> format --> page
-
-  website
-    pages
-    weblog
-      entries
-    galleries
-      pictures
-
-a page has a title
-an entry has a (title, date)
+Peter Stuifzand <peter@stuifzand.eu>
 
